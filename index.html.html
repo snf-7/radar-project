@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>رادار | Radar — Fraud Intelligence</title>
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        ar: ['"IBM Plex Sans Arabic"', '"Tajawal"', "sans-serif"],
+                        mono: ['"JetBrains Mono"', "monospace"],
+                    },
+                    colors: {
+                        safe: "#00E5A0",
+                        review: "#FFB020",
+                        fraud: "#FF4D5E",
+                    },
+                },
+            },
+        };
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet"
+    />
+
+    <style>
+        /* ============================================================
+           Radar — Dark Glassmorphism design system
+           ============================================================ */
+        :root {
+            --safe: #00e5a0;
+            --review: #ffb020;
+            --fraud: #ff4d5e;
+            --bg0: #0a0e1a;
+            --bg1: #0d1424;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --dim: #8b98b4;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { margin: 0; padding: 0; }
+
+        body {
+            font-family: "IBM Plex Sans Arabic", "Tajawal", sans-serif;
+            color: #e6ecf7;
+            background: var(--bg0);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated radial gradient + grid backdrop */
+        .app-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(900px circle at 12% -8%, rgba(0, 229, 160, 0.10), transparent 45%),
+                radial-gradient(820px circle at 90% 4%, rgba(59, 130, 246, 0.12), transparent 42%),
+                radial-gradient(1100px circle at 50% 120%, rgba(0, 229, 160, 0.06), transparent 50%),
+                linear-gradient(160deg, var(--bg1), var(--bg0));
+        }
+        .app-bg::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 46px 46px;
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
+            animation: grid-drift 40s linear infinite;
+        }
+        @keyframes grid-drift {
+            from { background-position: 0 0, 0 0; }
+            to { background-position: 46px 46px, 46px 46px; }
+        }
+
+        /* ---------------------- Glass ---------------------- */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .mono { font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum"; }
+
+        /* ---------------------- Radar sweep logo ---------------------- */
+        .radar-sweep { transform-origin: 50% 50%; animation: sweep 3.2s linear infinite; }
+        @keyframes sweep { to { transform: rotate(360deg); } }
+        .radar-ring { animation: ring-pulse 3.2s ease-out infinite; transform-origin: 50% 50%; }
+        @keyframes ring-pulse {
+            0% { opacity: 0.9; r: 4; }
+            100% { opacity: 0; r: 22; }
+        }
+
+        /* ---------------------- Pills ---------------------- */
+        .pill {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.22rem 0.7rem; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 700;
+        }
+        .pill-safe { color: var(--safe); background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.35); box-shadow: 0 0 14px rgba(0,229,160,0.18); }
+        .pill-review { color: var(--review); background: rgba(255,176,32,0.12); border: 1px solid rgba(255,176,32,0.35); box-shadow: 0 0 14px rgba(255,176,32,0.18); }
+        .pill-fraud { color: var(--fraud); background: rgba(255,77,94,0.14); border: 1px solid rgba(255,77,94,0.4); box-shadow: 0 0 16px rgba(255,77,94,0.25); }
+
+        /* Reason code mono tags */
+        .code-tag {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 0.68rem; font-weight: 600;
+            padding: 0.2rem 0.55rem; border-radius: 7px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: #cdd7ec; white-space: nowrap;
+        }
+        .code-tag.bad { color: var(--fraud); border-color: rgba(255,77,94,0.4); background: rgba(255,77,94,0.08); }
+        .code-tag.ok { color: var(--safe); border-color: rgba(0,229,160,0.4); background: rgba(0,229,160,0.08); }
+
+        /* ---------------------- Feed rows ---------------------- */
+        .feed-row {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1.3fr 1fr 0.9fr 1fr;
+            gap: 0.5rem; align-items: center;
+            padding: 0.7rem 1rem; border-radius: 12px;
+            border: 1px solid transparent; cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+        .feed-row:hover { background: rgba(255,255,255,0.04); border-color: var(--glass-border); }
+        .feed-row.selected { border-color: rgba(0,229,160,0.5); background: rgba(0,229,160,0.06); }
+        .feed-row.enter { animation: row-in 0.55s cubic-bezier(0.16,1,0.3,1); }
+        @keyframes row-in {
+            0% { opacity: 0; transform: translateY(-14px); background: rgba(0,229,160,0.18); }
+            100% { opacity: 1; transform: translateY(0); background: transparent; }
+        }
+        html[dir="ltr"] .feed-row { grid-template-columns: 1.4fr 1fr 1.3fr 1fr 0.9fr 1fr; }
+
+        /* ---------------------- Gauges ---------------------- */
+        .gauge-track { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden; }
+        .gauge-fill { height: 100%; border-radius: 999px; width: 0%; transition: width 0.9s cubic-bezier(0.16,1,0.3,1); }
+
+        /* ---------------------- Threat map ---------------------- */
+        .map-grid line { stroke: rgba(255,255,255,0.05); stroke-width: 1; }
+        .map-node { transition: all 0.3s ease; }
+        .node-pulse { animation: node-pulse 1.8s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+        @keyframes node-pulse {
+            0% { opacity: 0.8; transform: scale(1); }
+            70% { opacity: 0; transform: scale(3.4); }
+            100% { opacity: 0; transform: scale(3.4); }
+        }
+        .arc-path { fill: none; stroke-width: 2.2; stroke-linecap: round; }
+        .arc-anim { stroke-dasharray: 600; stroke-dashoffset: 600; }
+        .arc-draw { animation: arc-draw 1.1s ease forwards; }
+        @keyframes arc-draw { to { stroke-dashoffset: 0; } }
+        .node-dead { animation: node-die 0.8s ease forwards; }
+        @keyframes node-die {
+            0% { opacity: 1; }
+            50% { opacity: 1; }
+            100% { opacity: 0.15; }
+        }
+
+        /* ---------------------- Modal ---------------------- */
+        .overlay {
+            position: fixed; inset: 0; z-index: 60;
+            display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+            background: rgba(3,6,14,0.72); backdrop-filter: blur(7px);
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .overlay.open { opacity: 1; visibility: visible; }
+        .overlay .modal { transform: translateY(26px) scale(0.96); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); }
+        .overlay.open .modal { transform: translateY(0) scale(1); }
+
+        .tier-step { display: none; }
+        .tier-step.active { display: block; animation: fade-in 0.4s ease; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* FaceID scan */
+        .face-scan { position: relative; width: 130px; height: 130px; margin: 0 auto; border-radius: 28px; border: 2px solid rgba(0,229,160,0.4); overflow: hidden; }
+        .scan-line { position: absolute; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--safe), transparent); box-shadow: 0 0 14px var(--safe); animation: scan 1.6s ease-in-out infinite; }
+        @keyframes scan { 0%,100% { top: 8%; } 50% { top: 90%; } }
+
+        .tier-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,0.18); transition: all 0.3s ease; }
+        .tier-dot.on { background: var(--safe); box-shadow: 0 0 10px var(--safe); }
+
+        /* ---------------------- Toast ---------------------- */
+        .toast-host { position: fixed; bottom: 1.25rem; inset-inline-start: 1.25rem; z-index: 80; display: flex; flex-direction: column; gap: 0.6rem; }
+        .toast { display: flex; align-items: center; gap: 0.75rem; min-width: 290px; max-width: 380px; padding: 0.85rem 1rem; border-radius: 14px; background: rgba(10,16,28,0.75); backdrop-filter: blur(18px); border: 1px solid rgba(0,229,160,0.4); box-shadow: 0 12px 40px rgba(0,0,0,0.5); transform: translateX(-120%); opacity: 0; transition: transform 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.45s ease; }
+        html[dir="ltr"] .toast { transform: translateX(120%); }
+        .toast.show { transform: translateX(0); opacity: 1; }
+
+        /* ---------------------- Floating controls ---------------------- */
+        .dock { position: fixed; bottom: 1.25rem; inset-inline-end: 1.25rem; z-index: 70; }
+
+        /* ---------------------- Misc ---------------------- */
+        .glow-btn { transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease; }
+        .glow-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .glow-btn:active { transform: translateY(0); }
+        .attack-pulse { animation: attack-pulse 2s infinite; }
+        @keyframes attack-pulse {
+            0% { box-shadow: 0 0 16px rgba(255,77,94,0.4), 0 0 0 0 rgba(255,77,94,0.45); }
+            70% { box-shadow: 0 0 22px rgba(255,77,94,0.6), 0 0 0 12px rgba(255,77,94,0); }
+            100% { box-shadow: 0 0 16px rgba(255,77,94,0.4), 0 0 0 0 rgba(255,77,94,0); }
+        }
+        .count-up { font-variant-numeric: tabular-nums; }
+        .section-fade { opacity: 0; transform: translateY(18px); animation: sec-in 0.7s cubic-bezier(0.16,1,0.3,1) forwards; }
+        @keyframes sec-in { to { opacity: 1; transform: translateY(0); } }
+
+        ::-webkit-scrollbar { width: 9px; height: 9px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(var(--safe), #3b82f6); border-radius: 999px; border: 2px solid var(--bg0); }
+        * { scrollbar-width: thin; scrollbar-color: var(--safe) transparent; }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-bg"></div>
+
+    <div class="relative z-10 max-w-[1480px] mx-auto px-5 lg:px-8 pb-28">
+        <!-- ===================================================== TOP BAR ===================================================== -->
+        <header class="section-fade flex flex-wrap items-center justify-between gap-4 py-5">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <svg width="46" height="46" viewBox="0 0 48 48" class="shrink-0">
+                    <defs>
+                        <radialGradient id="sweepGrad">
+                            <stop offset="0%" stop-color="#00E5A0" stop-opacity="0.9" />
+                            <stop offset="100%" stop-color="#00E5A0" stop-opacity="0" />
+                        </radialGradient>
+                    </defs>
+                    <circle cx="24" cy="24" r="22" fill="none" stroke="rgba(0,229,160,0.18)" />
+                    <circle cx="24" cy="24" r="15" fill="none" stroke="rgba(0,229,160,0.14)" />
+                    <circle cx="24" cy="24" r="8" fill="none" stroke="rgba(0,229,160,0.12)" />
+                    <g class="radar-sweep">
+                        <path d="M24 24 L24 2 A22 22 0 0 1 43 13 Z" fill="url(#sweepGrad)" />
+                    </g>
+                    <circle class="radar-ring" cx="24" cy="24" r="4" fill="none" stroke="#00E5A0" stroke-width="1.5" />
+                    <circle cx="24" cy="24" r="2.5" fill="#00E5A0" />
+                </svg>
+                <div>
+                    <h1 class="text-2xl font-extrabold text-white leading-none">رادار</h1>
+                    <span class="mono text-[10px] tracking-[0.3em] text-safe">RADAR · FRAUD INTEL</span>
+                </div>
+            </div>
+
+            <!-- KPI counters -->
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="glass rounded-xl px-4 py-2.5 text-center min-w-[140px]">
+                    <p class="mono count-up text-xl font-bold text-safe" id="kpi-fp">0</p>
+                    <p class="text-[11px] text-[var(--dim)] mt-0.5" data-i18n="kpi_fp">إنذارات كاذبة تم تفاديها</p>
+                </div>
+                <div class="glass rounded-xl px-4 py-2.5 text-center min-w-[140px]">
+                    <p class="mono count-up text-xl font-bold text-white" id="kpi-cost">0</p>
+                    <p class="text-[11px] text-[var(--dim)] mt-0.5" data-i18n="kpi_cost">تكلفة موفّرة (ريال)</p>
+                </div>
+                <div class="glass rounded-xl px-4 py-2.5 text-center min-w-[110px]">
+                    <p class="mono count-up text-xl font-bold text-white" id="kpi-tps">0</p>
+                    <p class="text-[11px] text-[var(--dim)] mt-0.5" data-i18n="kpi_tps">معاملات/ثانية</p>
+                </div>
+                <div class="glass rounded-xl px-4 py-2.5 text-center min-w-[120px]">
+                    <p class="mono text-xl font-bold text-safe"><span id="kpi-latency">80</span><span class="text-sm">ms</span></p>
+                    <p class="text-[11px] text-[var(--dim)] mt-0.5" data-i18n="kpi_latency">متوسّط زمن الاستجابة</p>
+                </div>
+
+                <!-- Language toggle -->
+                <button id="langToggle" class="glass glow-btn rounded-xl px-4 py-2.5 text-sm font-bold text-white">
+                    <i class="fa"></i><span id="langLabel">EN</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ===================================================== MAIN GRID ===================================================== -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <!-- ============ LEFT: Live Feed ============ -->
+            <section class="xl:col-span-2 section-fade" style="animation-delay:0.05s">
+                <div class="glass rounded-2xl overflow-hidden">
+                    <div class="flex items-center justify-between gap-3 p-4 border-b border-white/5">
+                        <div class="flex items-center gap-2.5">
+                            <span class="relative flex h-2.5 w-2.5">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-60"></span>
+                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
+                            </span>
+                            <h2 class="text-base font-bold text-white" data-i18n="feed_title">التدفّق المباشر للمعاملات</h2>
+                        </div>
+                        <span class="text-[11px] text-[var(--dim)]" data-i18n="feed_hint">اضغط على أي صف لفحصه</span>
+                    </div>
+
+                    <!-- header row -->
+                    <div class="feed-row text-[11px] uppercase tracking-wide text-[var(--dim)] !cursor-default border-b border-white/5">
+                        <span data-i18n="col_customer">العميل</span>
+                        <span data-i18n="col_amount">المبلغ</span>
+                        <span data-i18n="col_merchant">التاجر</span>
+                        <span data-i18n="col_city">المدينة</span>
+                        <span data-i18n="col_score">الخطورة</span>
+                        <span data-i18n="col_status">الحالة</span>
+                    </div>
+
+                    <div id="feed" class="p-2 max-h-[440px] overflow-y-auto"></div>
+                </div>
+            </section>
+
+            <!-- ============ RIGHT: Radar Engine Panel ============ -->
+            <section class="section-fade" style="animation-delay:0.1s">
+                <div class="glass rounded-2xl p-5 h-full">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-bold text-white" data-i18n="engine_title">محرّك رادار · 4 أبعاد</h2>
+                        <div class="text-left">
+                            <p class="mono text-2xl font-bold text-safe leading-none"><span id="latencyTimer">73</span><span class="text-sm">ms</span></p>
+                            <p class="text-[10px] text-[var(--dim)]" data-i18n="latency_label">زمن القرار</p>
+                        </div>
+                    </div>
+
+                    <!-- Selected tx summary -->
+                    <div id="engineTx" class="rounded-xl p-3 mb-4 bg-white/[0.03] border border-white/10 text-sm text-[var(--dim)]" data-i18n="engine_empty">
+                        اختر معاملة من التدفّق لعرض التحليل التفصيلي.
+                    </div>
+
+                    <!-- 4 dimensions -->
+                    <div class="space-y-4" id="dims"></div>
+
+                    <!-- Composite -->
+                    <div class="mt-5 pt-4 border-t border-white/10">
+                        <div class="flex items-end justify-between mb-2">
+                            <div>
+                                <p class="text-xs text-[var(--dim)]" data-i18n="composite_label">النتيجة المركّبة</p>
+                                <p class="mono text-3xl font-extrabold text-white leading-none"><span id="compositeScore">0</span><span class="text-base text-[var(--dim)]">/100</span></p>
+                            </div>
+                            <span id="compositePill" class="pill pill-safe"><span data-i18n="status_safe">آمنة</span></span>
+                        </div>
+                        <div class="gauge-track"><div id="compositeFill" class="gauge-fill" style="background:linear-gradient(90deg,#00E5A0,#3b82f6)"></div></div>
+                        <div id="reasonCodes" class="flex flex-wrap gap-1.5 mt-3"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================================================== THREAT MAP ===================================================== -->
+        <section class="section-fade mt-5" style="animation-delay:0.15s">
+            <div class="glass rounded-2xl p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-2.5">
+                        <i class="text-fraud">◉</i>
+                        <h2 class="text-base font-bold text-white" data-i18n="map_title">الخريطة العالمية للتهديدات — عرض المهاجم</h2>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-left">
+                            <p class="mono text-2xl font-bold leading-none" id="mapTimer">0<span class="text-sm">ms</span></p>
+                            <p class="text-[10px] text-[var(--dim)]" data-i18n="map_timer_label">زمن الكشف والتجميد</p>
+                        </div>
+                        <span id="mapStatus" class="pill pill-safe"><span data-i18n="map_idle">المراقبة نشطة</span></span>
+                    </div>
+                </div>
+
+                <div class="relative rounded-xl overflow-hidden bg-black/30 border border-white/10">
+                    <svg id="threatMap" viewBox="0 0 1000 460" class="w-full h-auto block">
+                        <g id="mapGrid" class="map-grid"></g>
+                        <g id="mapArcs"></g>
+                        <g id="mapNodes"></g>
+                    </svg>
+                    <!-- Customer device prompt overlay -->
+                    <div id="devicePrompt" class="absolute opacity-0 transition-all duration-500 pointer-events-none" style="inset-inline-end: 8%; bottom: 12%;">
+                        <div class="glass rounded-2xl p-3 w-[180px] text-center border-2" style="border-color: rgba(0,229,160,0.5)">
+                            <i class="text-safe text-2xl">📱</i>
+                            <p class="text-xs font-bold text-white mt-1" data-i18n="device_prompt">طلب تحقّق على جهاز العميل</p>
+                            <p class="mono text-[10px] text-safe mt-0.5">TRUSTED_DEVICE</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-4 mt-3 text-[11px] text-[var(--dim)]">
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--safe)"></span><span data-i18n="legend_customer">عميل موثوق</span></span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--fraud)"></span><span data-i18n="legend_attacker">مهاجم</span></span>
+                    <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--review)"></span><span data-i18n="legend_traffic">حركة عادية</span></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================== SHOWDOWN ===================================================== -->
+        <section id="showdown" class="mt-5 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Legacy -->
+                <div id="legacyPanel" class="glass rounded-2xl p-5 border-2" style="border-color: rgba(255,77,94,0.35)">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold text-white" data-i18n="legacy_title">بنك تقليدي (Legacy)</h3>
+                        <span class="code-tag bad">RULE_BASED</span>
+                    </div>
+                    <div id="legacyBody" class="min-h-[180px] flex flex-col items-center justify-center text-center gap-3"></div>
+                    <div class="grid grid-cols-2 gap-3 mt-4">
+                        <div class="rounded-xl p-3 bg-white/[0.03] border border-white/10 text-center">
+                            <p class="mono text-lg font-bold text-fraud" id="legacyCost">0</p>
+                            <p class="text-[10px] text-[var(--dim)]" data-i18n="legacy_cost">تكلفة مكالمة الوكيل (ريال)</p>
+                        </div>
+                        <div class="rounded-xl p-3 bg-white/[0.03] border border-white/10 text-center">
+                            <p class="mono text-lg font-bold text-fraud" id="legacyChurn">0</p>
+                            <p class="text-[10px] text-[var(--dim)]" data-i18n="legacy_churn">عملاء محبَطون</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Radar -->
+                <div id="radarPanel" class="glass rounded-2xl p-5 border-2" style="border-color: rgba(0,229,160,0.4)">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold text-white" data-i18n="radar_title">رادار (Radar)</h3>
+                        <span class="code-tag ok">AI_RISK_ENGINE</span>
+                    </div>
+                    <div id="radarBody" class="min-h-[180px] flex flex-col items-center justify-center text-center gap-3"></div>
+                    <div class="grid grid-cols-2 gap-3 mt-4">
+                        <div class="rounded-xl p-3 bg-white/[0.03] border border-white/10 text-center">
+                            <p class="mono text-lg font-bold text-safe" id="radarRetained">0</p>
+                            <p class="text-[10px] text-[var(--dim)]" data-i18n="radar_retained">العملاء المحتفظ بهم</p>
+                        </div>
+                        <div class="rounded-xl p-3 bg-white/[0.03] border border-white/10 text-center">
+                            <p class="mono text-lg font-bold text-safe" id="radarRevenue">0</p>
+                            <p class="text-[10px] text-[var(--dim)]" data-i18n="radar_revenue">الإيراد المحمي (ريال)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ===================================================== VERIFY MODAL ===================================================== -->
+    <div id="verifyModal" class="overlay" aria-hidden="true">
+        <div class="modal glass rounded-3xl p-7 w-full max-w-[440px] text-center border-2" style="border-color: rgba(0,229,160,0.45)" role="dialog" aria-modal="true">
+            <!-- Tier indicator -->
+            <div class="flex items-center justify-center gap-2 mb-5">
+                <span class="tier-dot" data-tier="1"></span>
+                <span class="text-[11px] text-[var(--dim)] mono">TIER</span>
+                <span class="tier-dot" data-tier="2"></span>
+                <span class="tier-dot" data-tier="3"></span>
+            </div>
+
+            <!-- STEP A: Silent / FaceID -->
+            <div class="tier-step active" data-step="A">
+                <span class="pill pill-safe mb-3"><span data-i18n="tier1_tag">المستوى 1 · تحقّق صامت</span></span>
+                <h3 class="text-xl font-extrabold text-white mt-3 mb-1" data-i18n="tier1_title">التحقّق الصامت</h3>
+                <p class="text-xs text-[var(--dim)] mb-5" data-i18n="tier1_sub">تحقّق حيوي مرتبط بالجهاز (FIDO2 / Passkey)</p>
+                <div class="face-scan mb-2">
+                    <div class="absolute inset-0 grid place-items-center text-5xl" id="faceIcon">🙂</div>
+                    <div class="scan-line" style="top:8%"></div>
+                </div>
+                <p class="mono text-xs text-safe mb-5" id="faceStatus">SCANNING…</p>
+                <div class="space-y-2.5">
+                    <button class="glow-btn w-full py-3 rounded-xl font-bold text-white" style="background:linear-gradient(135deg,#00E5A0,#3b82f6); box-shadow:0 0 22px rgba(0,229,160,0.4)" data-action="approve" data-i18n="tier1_btn">تأكيد عبر FaceID</button>
+                    <button class="w-full py-2.5 rounded-xl font-semibold text-[var(--dim)] bg-white/5 border border-white/10 hover:text-white transition" data-action="ignore" data-i18n="tier1_ignore">تجاهل الإشعار</button>
+                </div>
+            </div>
+
+            <!-- STEP B: Nafath -->
+            <div class="tier-step" data-step="B">
+                <span class="pill pill-review mb-3"><span data-i18n="tier2_tag">المستوى 2 · نفاذ</span></span>
+                <h3 class="text-xl font-extrabold text-white mt-3 mb-1" data-i18n="tier2_title">التحقّق عبر نفاذ</h3>
+                <p class="text-xs text-[var(--dim)] mb-4" data-i18n="tier2_sub">توثيق حكومي · اختر الرقم المطابق</p>
+                <div class="rounded-2xl p-5 mb-4 bg-white/[0.03] border border-white/10">
+                    <p class="text-xs text-[var(--dim)] mb-2" data-i18n="tier2_code">رقم التحقّق الظاهر في تطبيقك</p>
+                    <p class="mono text-5xl font-extrabold text-review" id="nafathCode">42</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2.5" id="nafathOptions"></div>
+                <p class="mono text-xs mt-4 h-4" id="nafathStatus"></p>
+                <button class="w-full mt-3 py-2.5 rounded-xl font-semibold text-[var(--dim)] bg-white/5 border border-white/10 hover:text-white transition" data-action="fallback" data-i18n="tier2_fallback">تعذّر التحقّق؟ روبوت رادار الصوتي</button>
+            </div>
+
+            <!-- STEP C: Voice bot -->
+            <div class="tier-step" data-step="C">
+                <span class="pill pill-fraud mb-3"><span data-i18n="tier3_tag">المستوى 3 · روبوت صوتي</span></span>
+                <h3 class="text-xl font-extrabold text-white mt-3 mb-1" data-i18n="tier3_title">روبوت رادار الصوتي</h3>
+                <p class="text-xs text-[var(--dim)] mb-5" data-i18n="tier3_sub">يطلب التأكيد داخل التطبيق فقط — لا يتم التحقّق عبر المكالمة</p>
+                <div class="w-24 h-24 mx-auto rounded-full grid place-items-center mb-3 attack-pulse" style="background:linear-gradient(135deg,#3b82f6,#00E5A0)">
+                    <span class="text-4xl">📞</span>
+                </div>
+                <div class="flex items-end justify-center gap-1 h-8 mb-3" id="voiceBars"></div>
+                <p class="mono text-xs text-safe mb-2" id="voiceStatus" data-i18n="tier3_calling">جارٍ الاتصال بالعميل…</p>
+                <span class="code-tag ok inline-flex mb-5">SIM_SWAP_DEFENSE · Tahaqaq ✓</span>
+                <p class="text-[11px] text-[var(--dim)] mb-4" data-i18n="tier3_tahaqaq">تحقّق ربط الرقم عبر تحقّق (Tahaqaq) لمنع تبديل الشريحة</p>
+                <button class="glow-btn w-full py-3 rounded-xl font-bold text-white" style="background:linear-gradient(135deg,#00E5A0,#3b82f6)" data-action="approve" data-i18n="tier3_btn">تأكيد داخل التطبيق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div id="toastHost" class="toast-host"></div>
+
+    <!-- ===================================================== SCENARIO DOCK ===================================================== -->
+    <div class="dock glass rounded-2xl p-3 flex flex-col gap-2 w-[230px]">
+        <p class="text-[11px] uppercase tracking-wide text-[var(--dim)] px-1" data-i18n="dock_title">لوحة تشغيل العرض</p>
+        <button id="btnFraud" class="glow-btn attack-pulse text-sm font-bold text-white rounded-xl py-2.5 px-3 text-right flex items-center gap-2" style="background:linear-gradient(135deg,#FF4D5E,#b91c1c)">
+            <span>▶️</span><span data-i18n="dock_fraud">سيناريو الاحتيال (الرياض←لندن)</span>
+        </button>
+        <button id="btnFP" class="glow-btn text-sm font-bold text-white rounded-xl py-2.5 px-3 text-right flex items-center gap-2" style="background:linear-gradient(135deg,#FFB020,#b45309)">
+            <span>▶️</span><span data-i18n="dock_fp">سيناريو الإنذار الكاذب (دبي)</span>
+        </button>
+        <button id="btnPause" class="glow-btn text-sm font-bold text-white rounded-xl py-2.5 px-3 text-right flex items-center gap-2 bg-white/10 border border-white/15">
+            <span id="pauseIcon">⏸️</span><span id="pauseLabel" data-i18n="dock_pause">إيقاف التدفّق</span>
+        </button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
